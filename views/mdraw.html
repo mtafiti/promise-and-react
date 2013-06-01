@@ -1,250 +1,269 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-	<title>My Drawing App</title>
-	<link rel="stylesheet" type="text/css" href="css/mdraw.css"  />
-	<script src="/js/mdraw.js"></script>
-	<script src="/js/utils.js"></script>
-	<script src="/js/gfproxy.js"></script>
+    <title>My Drawing App</title>
+    <link rel="stylesheet" type="text/css" href="css/mdraw.css"/>
+    <script src="/js/mdraw.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/gfproxy.js"></script>
     <script src="/js/flapjax-2.1.js"></script>
     <script src="/js/q.js"></script>
     <script type="text/javascript" src="http://localhost:8000/nowjs/now.js"></script>
 
-	<script type="text/javascript" language="javascript">
-		//var HOST = 'localhost:8000';
-		//var roomsocket = io.connect('http://'+HOST+'/rooms'),
-		//	leadersocket = io.connect('http://'+HOST+'/leader');
+    <script type="text/javascript" language="javascript">
+        //var HOST = 'localhost:8000';
+        //var roomsocket = io.connect('http://'+HOST+'/rooms'),
+        //	leadersocket = io.connect('http://'+HOST+'/leader');
         var rname = getQueryString('rname');
         var nickname = getQueryString('nick');
 
         var clientId;
 
-        setNames(rname,nickname);
+        setNames(rname, nickname);
 
-        now.ready(function(){
+        now.ready(function () {
             // "Hello World!" will print on server
             now.logMessage("Connected to the server successfully.");
 
-            now.addClientToGroup(nickname,rname,function(id,res){
-               console.log("Added to users list on server."+ id);
+            now.addClientToGroup(nickname, rname, function (id, res) {
+                console.log("Added to users list on server." + id);
                 //set clientID
                 clientId = id;
             });
 
             now.logRooms();
             /*
-            //user promise
-            //use promise when joining room
-            //join the room
-            roomsocket.emit('join room', {'rname':rname});
-            var promise;
-            promise = (function () {
-                var deferred = Q.defer();
+             //user promise
+             //use promise when joining room
+             //join the room
+             roomsocket.emit('join room', {'rname':rname});
+             var promise;
+             promise = (function () {
+             var deferred = Q.defer();
 
-                roomsocket.on('joined', function (reply) {
-                    if (reply) deferred.resolve(reply);
-                    else    deferred.reject(new Error("join room failed"));
-                });
-                return deferred.promise;
-            })();
-            promise.then(function(msg){
-                console.info("Joined room" + reply.msg);
-                debugger;
-            }, function(err){
-                console.err(err);
-            });
+             roomsocket.on('joined', function (reply) {
+             if (reply) deferred.resolve(reply);
+             else    deferred.reject(new Error("join room failed"));
+             });
+             return deferred.promise;
+             })();
+             promise.then(function(msg){
+             console.info("Joined room" + reply.msg);
+             debugger;
+             }, function(err){
+             console.err(err);
+             });
 
-            //promisify!!
+             //promisify!!
              function promisify(fn){
-                return function(){
-                 var deferred = new Promise;
-                 switch (arguments.length) {
-                 case 0: fn.call(this, cb); break;
-                     default: fn.apply(this,arguments.slice().concat(cb)
-                     break;
-                 }
-                 function cb (err, value) {
-                     if (error == null) {
-                         deferred.resolve((arguments.length > 2) ?
-                         slice.call(arguments, 1) : value);
-                     } else {
-                        deferred.reject(error); }
-                     }
-                     return deferred
-                 }
+             return function(){
+             var deferred = new Promise;
+             switch (arguments.length) {
+             case 0: fn.call(this, cb); break;
+             default: fn.apply(this,arguments.slice().concat(cb)
+             break;
+             }
+             function cb (err, value) {
+             if (error == null) {
+             deferred.resolve((arguments.length > 2) ?
+             slice.call(arguments, 1) : value);
+             } else {
+             deferred.reject(error); }
+             }
+             return deferred
+             }
              }
 
-            */
+             */
         });
 
 
-        now.receiveMessage = function(name, msg){
-            console.log("Message from "+name + ": "+msg);
+        now.receiveMessage = function (name, msg) {
+            console.log("Message from " + name + ": " + msg);
         };
 
 
-		now.receiveData = function(name, data) {
-			// handle published data - ignore your data
-            if (name !== clientId){
-			    processDistData(data);
+        now.receiveData = function (name, data) {
+            // handle published data - ignore your data
+            if (name !== clientId) {
+                processDistData(data);
             }
-		};
+        };
 
-		//load the session, if any
-		loadSession();
+        //load the session, if any
+        loadSession();
 
-		function publishChange(data){
-			data.rname = rname;
-			now.distributeData(data);
-		}
+        function publishChange(data) {
+            data.rname = rname;
+            now.distributeData(data);
+        }
 
-		function publishGesture(msg){
+        function publishGesture(msg) {
             //todo
-			//leadersocket.emit('event raised',msg);
-		}
-	</script>
+            //leadersocket.emit('event raised',msg);
+        }
+    </script>
 </head>
-<body onload="init()" >
+<body onload="init()">
 
-	<div id="top">
-	 <div class="center">
-	  <div style="font-variant: small-caps" class="west">
-	   <div class="cur" id="username1" style="left: 12px; top: 10px">User: </div>
-	  <!--  <div id="light" onmousedown="canvas.mode_sw('light');" style="left: 24px; top: 10px">light</div> -->
-	  </div>
-	  <div class="east">
-	   <div style="background: none; border-left: none; border-right:1px solid #161616; height: 22px; padding: 0; cursor: default"></div>
-		<div id="savesession" id="isolid" class="">Save</div>
-	   <div  id="home" id="igradient" class="">Home</div>
-	   <!-- <div onmousedown="win.tab(this,'pattern','pattern'); if(this.className != 'cur') gui_swatch.toType('PT');" id="ipattern" class="cur">pattern</div>
-	   <div onmousedown="win.tab(this,'swatch',vars[vars.id])" id="iswatch" class="cur">swatch</div>
-	   <div onmousedown="win.tab(this,'history',vars[vars.id])" id="ihistory" class="cur">history</div> -->
-	   <div  id="ioptions" class="">
-			<span >&nbsp;</span>
-		</div>
-	  <!--  <div style="display:none" class="cur open" onmousedown="canvas.open();"><span></span></div>
-	   <a target="_blank" onclick="window.saveDrawing(); return false;" href="#">
-		<div class="save"><span></span></div>
-	   </a> -->
-	   <div style="background: none; border-left: none; border: none; border-left:1px solid #3e3e3e; height: 22px; padding: 0; cursor: default"></div>
-	  </div>
-	 </div>
-	</div>
+<div id="top">
+    <div class="center">
+        <div style="font-variant: small-caps" class="west">
+            <div class="cur" id="username1" style="left: 12px; top: 10px">User:</div>
+            <!--  <div id="light" onmousedown="canvas.mode_sw('light');" style="left: 24px; top: 10px">light</div> -->
+        </div>
+        <div class="east">
+            <div style="background: none; border-left: none; border-right:1px solid #161616; height: 22px; padding: 0; cursor: default"></div>
+            <div id="savesession" id="isolid" class="">Save</div>
+            <div id="home" id="igradient" class="">Home</div>
+            <!-- <div onmousedown="win.tab(this,'pattern','pattern'); if(this.className != 'cur') gui_swatch.toType('PT');" id="ipattern" class="cur">pattern</div>
+            <div onmousedown="win.tab(this,'swatch',vars[vars.id])" id="iswatch" class="cur">swatch</div>
+            <div onmousedown="win.tab(this,'history',vars[vars.id])" id="ihistory" class="cur">history</div> -->
+            <div id="ioptions" class="">
+                <span>&nbsp;</span>
+            </div>
+            <!--  <div style="display:none" class="cur open" onmousedown="canvas.open();"><span></span></div>
+             <a target="_blank" onclick="window.saveDrawing(); return false;" href="#">
+              <div class="save"><span></span></div>
+             </a> -->
+            <div style="background: none; border-left: none; border: none; border-left:1px solid #3e3e3e; height: 22px; padding: 0; cursor: default"></div>
+        </div>
+    </div>
+</div>
 
-	<!-- div for tools -->
-	<div class="gui" id="tools" style="left: 119.5px; top: 35px; opacity: 1; display: block;">
-	 <div class="bounds">
-	  <div class="TL"></div>
-	  <div class="TM"><div class="TMM">tools</div></div>
-	  <div class="TR"></div><br>
-	  <div class="ML"></div>
-	  <div class="MM">
-	   <div class="z">
-		<div class="tools">
-		 	 <div id="selectallshapes"  title="Select all">
-				<img alt="selall" class="Stamp" src="/images/selectall.png" />
-			</div>
-		 <div id="selectshapes" title="Select shapes">
-			<img alt="select" class="Eraser" src="/images/select.png" />
-		 </div>
-		<br />
-		 <div class="hr"></div>
-		  <div id="drawlines"  title="Draw lines">
-			<img alt="line" class="Marquee_polygon" src="/images/Pencil.png" />
-		 </div>
-		 <div  id="drawrects"  title="Rect">
-			<img alt="Rect" class="Text" src="/images/Shape_rect_3.png" />
-		 </div>
-		 <div id="drawellipses"  title="Ellipse">
-			<img alt="ellipse" class="Shape_polygon" src="/images/Shape_ellipses.png" />
-		</div>
-		 <div id="drawcrects"  title="Draw rounded rect" >
-			<img alt="crect" class="Shape_polygon" src="/images/Shape_crect.png" />
-		 </div>
-		 <div class="hr"></div>
-		 <div id="deleteallshapes" title="Delete all">
-			<img alt="delete all shapes" class="Eraser" src="/images/deleteall.png" />
-		 </div>
-		 <div id="deleteshapes"  title="Delete selected shapes">
-			<img alt="delete" class="Shape_polygon" src="/images/eraser.png" />
-		 </div>
+<!-- div for tools -->
+<div class="gui" id="tools" style="left: 119.5px; top: 35px; opacity: 1; display: block;">
+    <div class="bounds">
+        <div class="TL"></div>
+        <div class="TM">
+            <div class="TMM">tools</div>
+        </div>
+        <div class="TR"></div>
+        <br>
 
-		 <div id="fillshapes" onclick="" title="Fill">
-			<img alt="Fill" class="Fill" src="/images/fill.png" />
-		 </div>
-	 
-		 <div id='groupshapes' onclick="" title="Group">
-			<img alt="Group" class="Picker" src="/images/group2.png" />
-		 </div>
-		  <br>
-		
-		</div>
-           <div class="hr"></div>
-           <div class="ss2">
-               Fill color
-               <select id="fillcolor" >
-                   <option value="#0C69A4" selected="selected">blue</option>
-                   <option value="#7B0909">red</option>
-                   <option value="#0C4C11">green</option>
-                   <option value="#FFFF00">yellow</option>
-                   <option value="#59008e">purple</option>
-                   <option value="">none</option>
-               </select>
-               Border color
-               <select id="bordercolor" >
-                   <option value="#0A0A0A">black</option>
-                   <option value="blue">blue</option>
-                   <option value="red">red</option>
-                   <option value="green">green</option>
-                   <option value="#FFFF00">yellow</option>
-                   <option value="#59008e">purple</option>
-               </select>
-               Border width
-               <select id="borderwidth" >
-                   <option value="thin">thin</option>
-                   <option value="medium">medium</option>
-                   <option value="thick">thick</option>
-               </select>
+        <div class="ML"></div>
+        <div class="MM">
+            <div class="z">
+                <div class="tools">
+                    <div id="selectallshapes" title="Select all">
+                        <img alt="selall" class="Stamp" src="/images/selectall.png"/>
+                    </div>
+                    <div id="selectshapes" title="Select shapes">
+                        <img alt="select" class="Eraser" src="/images/select.png"/>
+                    </div>
+                    <br/>
 
-           </div>
-		 <div class="hr"></div>
-		<div class="ss">
-		 <div id="swap">F</div>
-		 <div class="fill" style="z-index: 2; cursor: default;">
-		  <canvas title="Fill" id="fill"  onmousedown="gui_palette.click('fill')" width="34" height="23" style="cursor: default;"></canvas>
-		 </div>
-		 <div class="stroke" style="z-index: 1; cursor: pointer;">
-		  <canvas title="Stroke" id="stroke" onmousedown="gui_palette.click('stroke')" width="34" height="23" style="cursor: pointer;"></canvas>
-		  <div onmousedown="gui_palette.click('stroke')"><div></div></div>
-		  <img alt="Switch Stroke with Fill" onmousedown="gui_palette.current(); return false" style="display: block" src="/images/sw_switch.png">
-		 </div>
-		</div>
-	   </div>
-	  </div>
-	  <div class="MR"></div><br>
-	  <div class="BL"></div>
-	  <div class="BM"></div>
-	  <div class="BR"></div>
-	 </div>
-	</div>
-	<!-- the canvas -->
-	
-	<div style="width: 732px; height: 615px; left: 212.5px; top: 35px; opacity: 1; display: block;" class="gui" id="canvas">
-	 <div class="TL"></div>
-	 <div ondblclick="win_size.tog(vars.winMax?'min':'max')" class="TM" style="width: 700px;">
-	  <div class="center">
-	   <span id="cTitle">mDraw: Collab Drawing Session</span>
-	  </div>
-	  <div id="cZoom" class="east"></div>
-	 </div>
-	 <div class="TR"></div><br>
-	 <div class="ML" style="height: 575px;"></div>
-	 <div class="MM" style="height: 575px; width: 700px;">	
-		<canvas id="canv1" width="700px" height="575px" onmousedown=""  onmouseup="" onmousemove="">Seems like your browser does not support html5.</canvas>
-	 </div>
-	 <div class="MR" style="height: 575px;"></div><br>
-	 <div class="BL"></div>
-	 <div class="BM" style="width: 700px;"></div>
-	 <div class="BR"></div>
-	</div>
+                    <div class="hr"></div>
+                    <div id="drawlines" title="Draw lines">
+                        <img alt="line" class="Marquee_polygon" src="/images/Pencil.png"/>
+                    </div>
+                    <div id="drawrects" title="Rect">
+                        <img alt="Rect" class="Text" src="/images/Shape_rect_3.png"/>
+                    </div>
+                    <div id="drawellipses" title="Ellipse">
+                        <img alt="ellipse" class="Shape_polygon" src="/images/Shape_ellipses.png"/>
+                    </div>
+                    <div id="drawcrects" title="Draw rounded rect">
+                        <img alt="crect" class="Shape_polygon" src="/images/Shape_crect.png"/>
+                    </div>
+                    <div class="hr"></div>
+                    <div id="deleteallshapes" title="Delete all">
+                        <img alt="delete all shapes" class="Eraser" src="/images/deleteall.png"/>
+                    </div>
+                    <div id="deleteshapes" title="Delete selected shapes">
+                        <img alt="delete" class="Shape_polygon" src="/images/eraser.png"/>
+                    </div>
+
+                    <div id="fillshapes" onclick="" title="Fill">
+                        <img alt="Fill" class="Fill" src="/images/fill.png"/>
+                    </div>
+
+                    <div id='groupshapes' onclick="" title="Group">
+                        <img alt="Group" class="Picker" src="/images/group2.png"/>
+                    </div>
+                    <br>
+
+                </div>
+                <div class="hr"></div>
+                <div class="ss2">
+                    Fill color
+                    <select id="fillcolor">
+                        <option value="#0C69A4" selected="selected">blue</option>
+                        <option value="#7B0909">red</option>
+                        <option value="#0C4C11">green</option>
+                        <option value="#FFFF00">yellow</option>
+                        <option value="#59008e">purple</option>
+                        <option value="">none</option>
+                    </select>
+                    Border color
+                    <select id="bordercolor">
+                        <option value="#0A0A0A">black</option>
+                        <option value="blue">blue</option>
+                        <option value="red">red</option>
+                        <option value="green">green</option>
+                        <option value="#FFFF00">yellow</option>
+                        <option value="#59008e">purple</option>
+                    </select>
+                    Border width
+                    <select id="borderwidth">
+                        <option value="thin">thin</option>
+                        <option value="medium">medium</option>
+                        <option value="thick">thick</option>
+                    </select>
+
+                </div>
+                <div class="hr"></div>
+                <div class="ss">
+                    <div id="swap">F</div>
+                    <div class="fill" style="z-index: 2; cursor: default;">
+                        <canvas title="Fill" id="fill" onmousedown="gui_palette.click('fill')" width="34" height="23"
+                                style="cursor: default;"></canvas>
+                    </div>
+                    <div class="stroke" style="z-index: 1; cursor: pointer;">
+                        <canvas title="Stroke" id="stroke" onmousedown="gui_palette.click('stroke')" width="34"
+                                height="23" style="cursor: pointer;"></canvas>
+                        <div onmousedown="gui_palette.click('stroke')">
+                            <div></div>
+                        </div>
+                        <img alt="Switch Stroke with Fill" onmousedown="gui_palette.current(); return false"
+                             style="display: block" src="/images/sw_switch.png">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="MR"></div>
+        <br>
+
+        <div class="BL"></div>
+        <div class="BM"></div>
+        <div class="BR"></div>
+    </div>
+</div>
+<!-- the canvas -->
+
+<div style="width: 732px; height: 615px; left: 212.5px; top: 35px; opacity: 1; display: block;" class="gui" id="canvas">
+    <div class="TL"></div>
+    <div ondblclick="win_size.tog(vars.winMax?'min':'max')" class="TM" style="width: 700px;">
+        <div class="center">
+            <span id="cTitle">mDraw: Collab Drawing Session</span>
+        </div>
+        <div id="cZoom" class="east"></div>
+    </div>
+    <div class="TR"></div>
+    <br>
+
+    <div class="ML" style="height: 575px;"></div>
+    <div class="MM" style="height: 575px; width: 700px;">
+        <canvas id="canv1" width="700px" height="575px" onmousedown="" onmouseup="" onmousemove="">Seems like your
+            browser does not support html5.
+        </canvas>
+    </div>
+    <div class="MR" style="height: 575px;"></div>
+    <br>
+
+    <div class="BL"></div>
+    <div class="BM" style="width: 700px;"></div>
+    <div class="BR"></div>
+</div>
 </html>
