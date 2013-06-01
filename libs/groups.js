@@ -1,10 +1,11 @@
 /**
  * Created with JetBrains WebStorm.
- * User: ken
+ * User: Kennedy Kambona
  * Date: 23/04/13
  * Time: 11:48
- * To change this template use File | Settings | File Templates.
- */
+ * Copyright Software Languages Lab 2013.
+ * MIT License.
+ *  */
 var mynow = require("now");
 
 exports.initialize = function(server){

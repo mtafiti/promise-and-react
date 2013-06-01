@@ -70,6 +70,10 @@ mynow.everyone.now.logRooms = function(){
    console.dir(mynow.getAllRooms());
 };
 
+mynow.everyone.now.loadRooms = function(cb){
+    cb(null,mynow.getAllRooms());
+};
+
 mynow.everyone.now.distributeMessage = function(message){
     everyone.now.receiveMessage(this.now.name, message);
 };
@@ -88,3 +92,8 @@ mynow.everyone.now.distributeData = function(data){
     //filter this client
     mynow.everyone.now.receiveData(this.user.clientId, data);
 };
+
+mynow.everyone.now.registerDrag = function(shpid, info, cb){
+    var reqE;
+
+}

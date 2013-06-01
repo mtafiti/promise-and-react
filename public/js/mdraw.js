@@ -14,9 +14,6 @@
 	// holds all our boxes
 	var allshapes = [];
 
-    //holds all connected clients
-    var connecteds = [];
-
 	// New, holds the 8 tiny boxes that will be our selection handles
 	// the selection handles will be in this order:
 	// 0  1  2
@@ -94,7 +91,7 @@
 	  this.strokecolor = getRandomColor(); //'#444444';
 	}
 
-    //grouping shapes
+    //grouping shapes  - todo: not working
     function Group(shapesToAdd){
         var maxx = -1, maxy = -1, minx = 9999, miny = 9999;
         shapesToAdd.forEach(function(shape){

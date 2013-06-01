@@ -53,8 +53,30 @@
             }, function(err){
                 console.err(err);
             });
+
+            //promisify!!
+             function promisify(fn){
+                return function(){
+                 var deferred = new Promise;
+                 switch (arguments.length) {
+                 case 0: fn.call(this, cb); break;
+                     default: fn.apply(this,arguments.slice().concat(cb)
+                     break;
+                 }
+                 function cb (err, value) {
+                     if (error == null) {
+                         deferred.resolve((arguments.length > 2) ?
+                         slice.call(arguments, 1) : value);
+                     } else {
+                        deferred.reject(error); }
+                     }
+                     return deferred
+                 }
+             }
+
             */
         });
+
 
         now.receiveMessage = function(name, msg){
             console.log("Message from "+name + ": "+msg);

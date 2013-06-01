@@ -27,7 +27,31 @@ remoteCall("ajax","request=loadrooms",function (reply) {
 	});
 
  });
- 
+
+function loadRooms(){
+    promise = //...
+    now.addClientToGroup(nickname,rname,function(id,res){
+        console.log("Added to users list on server."+ id);
+        //set clientID
+        clientId = id;
+        promise.resolve(res)
+    });
+    return promise
+}
+/*
+function err(msg){ console.log("Error: " + msg)}
+
+p1 =  promisify(now.loadRooms);
+p2 = promisify(now.addClientToGroup);
+p1(nickname,rname)
+  .then(function(res){
+     return p2(res);
+  },err)
+  .then(function(res){
+     console.log(res.msg)
+  },err)
+  .done();
+  */
  function selectRoom(val){
 	if (val === 'new'){		
 		document.getElementById('roomname-div').style.display = "block";
