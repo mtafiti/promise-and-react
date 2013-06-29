@@ -79,6 +79,9 @@
     var selectionEndY;                  // Stores the y coordinate of the end of the current selection rectangle
 
 
+    //nowjs for invocations
+    var now;
+
     // shape object to hold data
     function SelHandle(x, y, w, h) {
         this.x = x || 0;
@@ -309,8 +312,8 @@
         resize: function (handle, mousex, mousey) {
             var oldx = this.x;
             var oldy = this.y;
-            var newx = oldx - mousex;	//TODO: global
-            var newy = oldy - mousey;	//TODO: global
+            var newx = oldx - mousex;
+            var newy = oldy - mousey;
             //keep track of old values
             var oldvals = {x: this.x, y: this.y, w: this.w, h: this.h};
 
@@ -396,6 +399,23 @@
             }
             return -1;
         },
+        //get the nearest index of the selected handle of this shape
+        getClosestSelectedHandle: function (mx, my) {
+            if (this.selectionhandles) {
+                var leastDist = 99999, idx = -1;
+                for (var i = 0; i < this.selectionhandles.length; i++) {
+                    var handle = this.selectionhandles[i];
+                    var dist = Math.sqrt((mx - handle.x) * (mx - handle.x) + (my - handle.y) * (my - handle.y));
+                    //check least dist, also idx
+                    //idx now holds the current nearest selection handle index
+                    if (dist < leastDist) {
+                        leastDist = dist;
+                        idx = i;
+                    }
+                }
+                return idx;
+            }
+        },
         //is this shape hit?
         isHit: function (mouseX, mouseY) {
             // Determine if the shape was clicked
@@ -440,8 +460,7 @@
             invalidate();
         },
         mouseUp: function (x, y, e) {
-
-            //this.selected= false;
+            //this.selected= false; //disable? if a shape is selected leave handles showing
         }
 
     };
@@ -926,7 +945,11 @@
 
 // initialize our canvas, set draw loop
 // then add everything we want to intially exist on the canvas
-    function init() {
+    function init(n) {
+        //store nowjs for invocaitons
+        now = n;
+
+        //setup canvas
         canvas = document.getElementById('canv1');
         HEIGHT = canvas.height;
         WIDTH = canvas.width;
@@ -991,6 +1014,11 @@
 
         registerReactiveMouseMovements(canvas);
 
+        //for the demo - also touch events
+        canvas.addEventListener("touchstart", touchHandler, true);
+        canvas.addEventListener("touchmove", touchHandler, true);
+        canvas.addEventListener("touchend", touchHandler, true);
+        canvas.addEventListener("touchcancel", touchHandler, true);
     }
 
 
@@ -1044,8 +1072,7 @@
 
 // Happens when the mouse is moving inside the canvas
     function myMove(e) {
-        //report to midas
-        publishMouseEvent(e, MOVE);
+
         //store some global vars
         getMouse(e);
 
@@ -1055,13 +1082,33 @@
             if (_shape.isSelected()) {
                 if (isDrag) {
                     //if shift is pressed, rotate
-                    //debugger;
                     if (e.shiftKey) {
                         _shape.rotate(mx, my);
                     } else {
-                        _shape.mouseMove(changeInX, changeInY, e);
+                        //send info to server
+                        var shpargs = {
+                            shape: _shape,
+                            evtargs: uncircularizeEvt(e), //avoid circular references before serializations
+                            deltaX: changeInX,
+                            deltaY: changeInY,
+                            mousex: mx,
+                            mousey: my,
+                            handle: _shape.getClosestSelectedHandle(mx, my)
+                        };
+                        now.registerDrag(_shape.shpid, shpargs, function (res) {
+                            //dont user _shape, use id from server
+                            if (res.isComposed === false) {
+                                var theshape = getBox(res.args.shape.shpid);
+                                //console.log("move called from server:  " + _shape.shpid);
+                                if (theshape) {
+                                    theshape.mouseMove(res.args.deltaX, res.args.deltaY, res.args.evtargs);
+                                } else console.error("registerDrag: shape not found: " + res.args.shape.shpid);
+                            } else {
+                                //console.log("Composed event raised on shape: " + (res.shpid || "unknown"));
+                                collabDrag(res.args);
+                            }
+                        });
                     }
-
                 } else if (isResizeDrag) {
                     _shape.mouseMove(mx, my, e, expectResize);
                     break;
@@ -1082,7 +1129,7 @@
                 // 3     4
                 // 5  6  7
                 if (curhandle !== -1) {
-                    // we found one!
+                    // we found one
                     expectResize = curhandle;
                     invalidate();
 
@@ -1130,7 +1177,6 @@
 
             invalidate();
         }
-        //------------ end multi select --------------------------
     }
 
 // Happens when the mouse is clicked in the canvas
@@ -1148,7 +1194,7 @@
         var l = allshapes.length;
 
         //loop - check what has been hit
-        for (var i = l - 1; i >= 0; i--) {
+        for (var i = 0; i < l; i++) {
             var _shape = allshapes[i];
 
             // Determine if the _shape was clicked
@@ -1156,7 +1202,6 @@
                 // we hit a shape
                 // if this shape is not selected then select it only
                 // since we are sure this is not a multi select here
-
                 if (!_shape.isSelected()) {
                     clearSelectedBoxes();
                 }
@@ -1214,9 +1259,6 @@
         //normalize coordinates relative to canvas
         getMouse(e);
 
-        isDrag = false;
-        isResizeDrag = false;
-
         expectResize = -1;
 
         // we finished multiselecting by doing a mouse up
@@ -1238,10 +1280,22 @@
         for (i = 0, l = allshapes.length; i < l; i++) {
             var _shape = allshapes[i];
             if (_shape.isHit(mx, my)) {
+                //unselect it if we were dragging
                 _shape.mouseUp(mx, my, e);
                 break;
             }
         }
+
+        if (isDrag) {
+            //report to server end of drag
+            now.registerEndDrag(_shape.shpid, function () {
+                console.log("..ended drag on client");
+            });
+        }
+
+        //todo: put in callback?
+        isDrag = false;
+        isResizeDrag = false;
 
         //end multi select part
         invalidate();
@@ -1355,7 +1409,7 @@
         invalidate();
     }
 
-// Sets mx,my to the mouse position relative to the canvas bounds
+// function getMouse: Sets mx,my to the mouse position relative to the canvas bounds
 // unfortunately this can be tricky, we have to worry about padding and borders
     function getMouse(e) {
         var element = canvas, offsetX = 0, offsetY = 0;
@@ -1406,8 +1460,7 @@
         x -= canvas.offsetLeft;
         y -= canvas.offsetTop;
 
-        // x and y contain the mouse position r
-        // Do something with this information
+        // x and y contain the mouse position
         return [x, y];
     }
 
@@ -1477,25 +1530,9 @@
     }
 
     function publishDistData(evtType, e, data, state) {
-        //report this change to socket.io server
-        var eventOptions = {};
-        if (e) {
-            eventOptions = {
-                pointerX: e.pointerX,
-                pointerY: e.pointerY,
-                pageX: e.pageX,
-                pageY: e.pageY,
-                screenX: e.screenX,
-                screenY: e.screenY,
-                button: e.button,
-                ctrlKey: e.ctrlKey,
-                altKey: e.altKey,
-                shiftKey: e.shiftKey,
-                metaKey: e.metaKey,
-                bubbles: e.bubbles,
-                cancelable: e.cancelable
-            };
-        }
+        //avoid circular references before serialization
+        var eventOptions = uncircularizeEvt(e);
+
         //calculate the relative x,y
         var mxy = normalizeMouseXY(eventOptions);
         if (data.shape) {
@@ -1594,7 +1631,7 @@
 
         //application logic - handle dist resize event
         var evtdata;
-        //get the data of the other participant <- maybe you shld remove this part
+        //get the data of the other participant <- maybe shld remove this part
         for (var i = 0; i < data.length; i++) {
 
             var evtdata = data[i];
@@ -1602,7 +1639,7 @@
                 continue;
             //debugger;
             //can check if update is for this device. maybe.
-            var box = getBox(evtdata.oid);
+            var box = getBox(evtdata.args.shape.shpid);
             if (!box) {
                 continue;
             }
@@ -1618,49 +1655,17 @@
             //if (mx >= (box.x - offset) && mx <= (right + offset)
             //	&& my >= (box.y-offset) && my <= (bottom + offset)) {
             //set the status todo: find a better way to set them..
-            isDrag = false;
-            isResizeDrag = true;
-            isDistEvent = true;
+            //isDrag = false;
+            //isResizeDrag = true;
+            isDistResize = true;
 
-            /*
-             */
-            //choose the correct resize handle
 
-            var idx = evtdata.args.idx;
-            var myx = evtdata.args.x;
-            var myy = evtdata.args.y;
-            if (myx < 3 || myy < 3) {
-                return;
-            }
-            console.info(">>expected resize in args: " + evtdata.args.idx);
-            //if (idx === undefined || idx === -1){
-            //get the eucl. distance to determine..
-            //..how near the remote mouse is to the sel handles
-            var leastDist = 99999, idx = -1;
-            for (var i = 0; i < box.selectionhandles.length; i++) {
-                var handle = box.selectionhandles[i];
-                var dist = Math.sqrt((myx - handle.x) * (myx - handle.x) + (myy - handle.y) * (myy - handle.y));
-                //check least dist, also idx
-                //idx now holds the current nearest selection handle index
-                if (dist < leastDist) {
-                    leastDist = dist;
-                    idx = i;
-                }
-            }
-            //}
+            var idx = evtdata.args.handle;
+            var myx = evtdata.args.mousex;
+            var myy = evtdata.args.mousey;
 
-            //opposite resize only
-            switch (idx) {
-                case 0:
-                case 5:
-                    idx = 3;
-                    break;
-                case 2:
-                case 7:
-                    idx = 4;
-                    break;
-            }
-            console.log(">>resized shape..." + idx);
+            //console.info(">> resize index for collab drag is: " + idx);
+
             //resize shape
             box.resize(idx, myx, myy);
             invalidate();
@@ -1888,7 +1893,7 @@
      */
     function loadReactiveToolbar() {
 
-        mergeE(clicksE("home"), clicksE("savesession"), clicksE("deleteshapes"), clicksE("selectshapes"), clicksE("drawlines"), clicksE("drawrects"), clicksE("drawellipses"), clicksE("drawcrects"), clicksE("deleteallshapes"), clicksE("selectallshapes"), clicksE("groupshapes"))
+        mergeE(clicksE("home"), clicksE("savesession"), clicksE("deleteshapes"), clicksE("selectshapes"), clicksE("drawlines"), clicksE("drawrects"), /*clicksE("drawellipses"), clicksE("drawcrects"), */clicksE("deleteallshapes"), clicksE("selectallshapes"), clicksE("groupshapes"))
             .mapE(function (val) {
 
                 switch (val.currentTarget.id) {
@@ -1991,14 +1996,43 @@
 
     }
 
-    function clientConnected(client) {
+    //touchhandler
+    function touchHandler(event) {
+        var touches = event.changedTouches,
+            first = touches[0],
+            type = "";
+        switch (event.type) {
+            case "touchstart":
+                type = "mousedown";
+                break;
+            case "touchmove":
+                type = "mousemove";
+                break;
+            case "touchend":
+                type = "mouseup";
+                break;
+            default:
+                return;
+        }
 
+        //initMouseEvent(type, canBubble, cancelable, view, clickCount,
+        //           screenX, screenY, clientX, clientY, ctrlKey,
+        //           altKey, shiftKey, metaKey, button, relatedTarget);
+
+        var simulatedEvent = document.createEvent("MouseEvent");
+        simulatedEvent.initMouseEvent(type, true, true, window, 1,
+            first.screenX, first.screenY,
+            first.clientX, first.clientY, false,
+            false, false, false, 0/*left*/, null);
+
+        first.target.dispatchEvent(simulatedEvent);
+        event.preventDefault();
     }
 
 // -------------- external functions -------------------------
 
 //init();
-    window.init = init;
+    window.initApp = init;
     window.processDistData = processDistData;
     window.setCurrentDraw = setCurrentDraw;
     window.changeFill = changeFill;

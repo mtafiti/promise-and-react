@@ -12,3 +12,25 @@ function getFunctionParams(fn) {
     else
         return [];
 }
+
+function uncircularizeEvt(e) {
+    var eventOptions = {};
+    if (e) {
+        eventOptions = {
+            pointerX: e.pointerX,
+            pointerY: e.pointerY,
+            pageX: e.pageX,
+            pageY: e.pageY,
+            screenX: e.screenX,
+            screenY: e.screenY,
+            button: e.button,
+            ctrlKey: e.ctrlKey,
+            altKey: e.altKey,
+            shiftKey: e.shiftKey,
+            metaKey: e.metaKey,
+            bubbles: e.bubbles,
+            cancelable: e.cancelable
+        };
+    }
+    return eventOptions;
+}

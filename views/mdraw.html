@@ -9,84 +9,34 @@
     <script src="/js/gfproxy.js"></script>
     <script src="/js/flapjax-2.1.js"></script>
     <script src="/js/q.js"></script>
-    <script type="text/javascript" src="http://localhost:8000/nowjs/now.js"></script>
+    <script type="text/javascript" src="/nowjs/now.js"></script>
 
     <script type="text/javascript" language="javascript">
-        //var HOST = 'localhost:8000';
-        //var roomsocket = io.connect('http://'+HOST+'/rooms'),
-        //	leadersocket = io.connect('http://'+HOST+'/leader');
+
         var rname = getQueryString('rname');
         var nickname = getQueryString('nick');
 
-        var clientId;
+        var sessionId = getURLParam("sessionid");
 
-        setNames(rname, nickname);
+        window.init = function () {
+            setNames(rname, nickname);
+            initApp(now);
+        };
 
         now.ready(function () {
-            // "Hello World!" will print on server
             now.logMessage("Connected to the server successfully.");
 
-            now.addClientToGroup(nickname, rname, function (id, res) {
-                console.log("Added to users list on server." + id);
-                //set clientID
-                clientId = id;
-            });
-
-            now.logRooms();
-            /*
-             //user promise
-             //use promise when joining room
-             //join the room
-             roomsocket.emit('join room', {'rname':rname});
-             var promise;
-             promise = (function () {
-             var deferred = Q.defer();
-
-             roomsocket.on('joined', function (reply) {
-             if (reply) deferred.resolve(reply);
-             else    deferred.reject(new Error("join room failed"));
-             });
-             return deferred.promise;
-             })();
-             promise.then(function(msg){
-             console.info("Joined room" + reply.msg);
-             debugger;
-             }, function(err){
-             console.err(err);
-             });
-
-             //promisify!!
-             function promisify(fn){
-             return function(){
-             var deferred = new Promise;
-             switch (arguments.length) {
-             case 0: fn.call(this, cb); break;
-             default: fn.apply(this,arguments.slice().concat(cb)
-             break;
-             }
-             function cb (err, value) {
-             if (error == null) {
-             deferred.resolve((arguments.length > 2) ?
-             slice.call(arguments, 1) : value);
-             } else {
-             deferred.reject(error); }
-             }
-             return deferred
-             }
-             }
-
-             */
         });
 
 
         now.receiveMessage = function (name, msg) {
-            console.log("Message from " + name + ": " + msg);
+            console.log("Message from participant: " + msg);
         };
 
 
-        now.receiveData = function (name, data) {
+        now.receiveData = function (sid, data) {
             // handle published data - ignore your data
-            if (name !== clientId) {
+            if (sid !== sessionId) {
                 processDistData(data);
             }
         };
@@ -103,6 +53,7 @@
             //todo
             //leadersocket.emit('event raised',msg);
         }
+
     </script>
 </head>
 <body onload="init()">
@@ -161,13 +112,13 @@
                     <div id="drawrects" title="Rect">
                         <img alt="Rect" class="Text" src="/images/Shape_rect_3.png"/>
                     </div>
-                    <div id="drawellipses" title="Ellipse">
-                        <img alt="ellipse" class="Shape_polygon" src="/images/Shape_ellipses.png"/>
-                    </div>
-                    <div id="drawcrects" title="Draw rounded rect">
-                        <img alt="crect" class="Shape_polygon" src="/images/Shape_crect.png"/>
-                    </div>
-                    <div class="hr"></div>
+                    <!-- <div id="drawellipses" title="Ellipse">
+                         <img alt="ellipse" class="Shape_polygon" src="/images/Shape_ellipses.png"/>
+                     </div>
+                     <div id="drawcrects" title="Draw rounded rect">
+                         <img alt="crect" class="Shape_polygon" src="/images/Shape_crect.png"/>
+                     </div>
+                     <div class="hr"></div>-->
                     <div id="deleteallshapes" title="Delete all">
                         <img alt="delete all shapes" class="Eraser" src="/images/deleteall.png"/>
                     </div>
@@ -223,7 +174,7 @@
                     <div class="stroke" style="z-index: 1; cursor: pointer;">
                         <canvas title="Stroke" id="stroke" onmousedown="gui_palette.click('stroke')" width="34"
                                 height="23" style="cursor: pointer;"></canvas>
-                        <div onmousedown="gui_palette.click('stroke')">
+                        <div>
                             <div></div>
                         </div>
                         <img alt="Switch Stroke with Fill" onmousedown="gui_palette.current(); return false"
@@ -244,7 +195,7 @@
 
 <div style="width: 732px; height: 615px; left: 212.5px; top: 35px; opacity: 1; display: block;" class="gui" id="canvas">
     <div class="TL"></div>
-    <div ondblclick="win_size.tog(vars.winMax?'min':'max')" class="TM" style="width: 700px;">
+    <div class="TM" style="width: 700px;">
         <div class="center">
             <span id="cTitle">mDraw: Collab Drawing Session</span>
         </div>
@@ -266,4 +217,7 @@
     <div class="BM" style="width: 700px;"></div>
     <div class="BR"></div>
 </div>
+</body>
+
+
 </html>

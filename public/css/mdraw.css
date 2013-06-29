@@ -27,6 +27,11 @@ fieldset {
     padding-top: 20%;
 }
 
+.fieldset-modal {
+    padding-left: 5%;
+    padding-top: 5%;
+}
+
 #login input, #login select, #login textarea {
     padding: 6px 2px 6px 7px;
     width: 273px;

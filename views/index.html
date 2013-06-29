@@ -2,17 +2,21 @@
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>Login to mDraw</title>
+    <title>Login</title>
     <link rel="stylesheet" type="text/css" href="css/mdraw.css"/>
+
+    <script src="/js/q.js"></script>
+    <script type="text/javascript" src="/nowjs/now.js"></script>
+
     <script src="js/mlogin.js"></script>
 </head>
-<body onload="">
+<body onload="init()">
 
 <!-- the canvas -->
 
 <div style="width: 732px; height: 615px; left: 212.5px; top: 35px; opacity: 1; display: block;" class="gui" id="canvas">
     <div class="TL"></div>
-    <div ondblclick="win_size.tog(vars.winMax?'min':'max')" class="TM" style="width: 700px;">
+    <div class="TM" style="width: 700px;">
         <div class="center">
             <span id="cTitle">mDraw Login</span>
         </div>
@@ -22,27 +26,33 @@
     <br>
 
     <div class="ML" style="height: 575px;"></div>
-    <div class="MM" style="height: 575px; width: 700px;" id="login">
-        <form class="fieldset-div" action="draw">
+    <div class="MM" style="height: 575px; width: 700px;" id="login" title="Login">
+        <form class="fieldset-div" action="draw" id="myform">
             <fieldset>
-                <legend>Login to mDraw</legend>
+                <legend>Login to start drawing</legend>
                 <div class="form-row">
+
                     <label for="nick">Name: </label>
                     <input type="text" name="nick" id="nick"/>
                 </div>
-                <div class="form-row">
+                <div class="form-row" id="join-div">
+                    <label for="sumbit">&nbsp; </label>
+                    <input id="join" type="button" value="Click to join"/>
+                </div>
+                <div class="form-row" id="roomname-dd">
                     <label for="room">Room: </label>
-                    <select name="room" id="room" onchange="selectRoom(this.value)">
-                        <option value="new">New room</option>
+                    <select name="room" id="room">
+                        <option value="-1">-Select room-</option>
                     </select>
                 </div>
                 <div class="form-row" id="roomname-div">
                     <label for="rname">Room name: </label>
                     <input type="text" name="rname" id="rname"/>
+                    <input type="hidden" name="sessionid" id="sessionid"/>
                 </div>
-                <div class="form-row">
+                <div class="form-row" id="start-div">
                     <label for="sumbit">&nbsp; </label>
-                    <input id="sumbit" type="submit" value="Ok"/>
+                    <input id="sumbit" type="submit" value="Start drawing"/>
                 </div>
 
             </fieldset>
@@ -56,4 +66,6 @@
     <div class="BR"></div>
 </div>
 
+
+</body>
 </html>
