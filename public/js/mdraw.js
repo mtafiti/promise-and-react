@@ -1996,7 +1996,8 @@
 
     }
 
-    //touchhandler
+    //touchhandler. see
+    //http://stackoverflow.com/questions/1517924/javascript-mapping-touch-events-to-mouse-events
     function touchHandler(event) {
         var touches = event.changedTouches,
             first = touches[0],
