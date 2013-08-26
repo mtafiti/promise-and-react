@@ -10,6 +10,7 @@ var express = require('express')
     , utils = require('./libs/utilities-server.js')
     , path = require('path');
 
+
 var app = express();
 
 
@@ -216,7 +217,7 @@ mynow.everyone.now.registerEndDrag = function (shape, cb) {
     //remove from dictionary
     distInteractions.remove(userId);
 
-    console.log("...ended drag operation by client " + this.user.cookie["connect.sid"]);
+    //console.log("...ended drag operation by client " + this.user.cookie["connect.sid"]);
     cb();
 };
 

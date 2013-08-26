@@ -11,28 +11,22 @@ exports.ajax_post = function (request, response, myajaxnow) {
 //clean get request
     var pathname = request.url;
     var content = '';
-    console.log("post was called with params " + request.params);
+    //console.log("post was called with params "+ request.params);
 
 
-    if (request.params["savesession"]) {
+    if (request.param("request") === "savesession") {
         //add data to rooms object
-        myajaxnow.saveData(postparams.data);
+        myajaxnow.saveData(request.param("data") || "", request.param("rname"));
         content = JSON.stringify({success: true, msg: 'Session saved successfully'});
-    } else if (request.params["loadsession"]) {
+    } else if (request.param("request") === "loadsession") {
         //get room session
-        var data = myajaxnow.getData(postparams.rname);
+        var data = myajaxnow.getData(request.param("rname"));
         content = JSON.stringify({data: data, success: true});
     }
 
     response.json({"rooms": content}, 200);
 };
 
-/**
- * Soon to be deprecated
- * @param request
- * @param response
- * @param myajaxnow
- */
 exports.ajax_get = function (request, response, myajaxnow) {
     //clean get request
     var pathname = request.url;
@@ -48,6 +42,5 @@ exports.ajax_get = function (request, response, myajaxnow) {
         var rms = myajaxnow.getAllRoomnames();
         content = JSON.stringify({success: true, rooms: rms});
     }
-    //respond
     response.json({"rooms": content}, 200);
 };

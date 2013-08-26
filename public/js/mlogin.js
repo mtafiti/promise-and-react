@@ -32,6 +32,7 @@ function loadRooms() {
     });
 }
 
+//where all the session logic magic happens...
 function loadRoomsP() {
 
     //p1 = fnpromise("ready");
@@ -67,24 +68,18 @@ function loadRoomsP() {
         return deferred.promise;
     })
         .then(function (rname) {
-            console.log("form submit...");
+            //console.log("form submit...");
             var nickname = document.getElementById('nick').value
             return p3(nickname, rname);
         })
         .then(function (sesid) {
-            debugger;
             console.log("Added to users list on server." + sesid);
             var nickname = document.getElementById('nick').value;
 
-            //set clientID
+            //set sessinID
             sessionId = sesid;
             return p4("Hi everyone! I have joined the session! My name is " + nickname);
-        },function err(msg) {
-            debugger;
-            console.error(msg);
-        }
-    ).then(function (res) {
-            debugger;
+        }).then(function (res) {
             if (res) {
                 alert("Joined drawing session successfully. ");
                 document.getElementById('sessionid').value = sessionId;
@@ -92,6 +87,8 @@ function loadRoomsP() {
                 var form = document.getElementById('myform');
                 form.submit();
             }
+        }, function err(msg) {
+            console.error(msg);
         })
         .done(); //.then...
 
@@ -130,6 +127,10 @@ function init() {
             loadRoomsP();
         }
     }
+    //message
+    now.receiveMessage = function (name, msg) {
+        console.log("Message from participant: " + msg);
+    };
 }
 //todo: investigate appending 2 cbs problem
 /** give now callback string, returns promise that invokes remote now server

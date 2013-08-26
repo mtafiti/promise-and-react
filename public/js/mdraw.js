@@ -1012,7 +1012,11 @@
         //load reactive toolbar
         loadReactiveToolbar();
 
+        //user interactions abstracted as event streams
         registerReactiveMouseMovements(canvas);
+
+        //starts an auto-save event stream every 5 secs
+        //startAutoSaveSessionTimer(10000);
 
         //for the demo - also touch events
         canvas.addEventListener("touchstart", touchHandler, true);
@@ -1756,25 +1760,28 @@
         var boxesJson = JSON.stringify(boxes3);
         //remote save
         remoteCall("ajax", "request=savesession&rname=" + rname + "&data=" + boxesJson, function (reply) {
-            if (reply.success === true) {
-                alert("Session saved successfully");
+            var result = JSON.parse(reply.rooms);
+            if (result.success === true) {
+                console.log("Session data saved successfully");
             } else {
-                alert("A problem occurred when saving");
+                console.log("A problem occurred when saving");
             }
         });
     }
 
     function loadSession() {
         //ajax call
-        remoteCall("ajax", "request=loadsession&rname=" + rname, function (reply) {
-            if (reply.success === true && reply.data !== '') {
-                loadShapesFromJson(reply.data);
-                alert("Session loaded successfully");
+        remoteCall("ajax", "request=loadsession&rname=" + getQueryString('room'), function (reply) {
+            var result = JSON.parse(reply.rooms);
+            if (result.success === true && result.data !== '') {
+                loadShapesFromJson(result.data);
+                console.log("Session data loaded successfully");
             } else {
                 //do sthng
             }
         });
     }
+
 
     function loadShapesFromJson(json) {
 
@@ -1783,6 +1790,15 @@
             var rect = addShape(obj.x, obj.y, obj.w, obj.h, obj.fill,
                 false, obj.shpid, obj.type, obj.strokecolor, obj.strokewidth);
 
+        });
+    }
+
+    //auto-saves the room data after a period of time
+    function startAutoSaveSessionTimer(timer) {
+        var autoSave = timerE(timer || 5000);
+        var savedTime = autoSave.mapE(function (val) {
+            if (allshapes.length > 0)
+                saveSession();
         });
     }
 
@@ -1996,8 +2012,7 @@
 
     }
 
-    //touchhandler. see
-    //http://stackoverflow.com/questions/1517924/javascript-mapping-touch-events-to-mouse-events
+    //touchhandler
     function touchHandler(event) {
         var touches = event.changedTouches,
             first = touches[0],
