@@ -2,35 +2,38 @@
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>My Drawing App</title>
+    <title>Drawing App</title>
     <link rel="stylesheet" type="text/css" href="css/mdraw.css"/>
-    <script src="/js/mdraw.js"></script>
-    <script src="/js/utils.js"></script>
-    <script src="/js/gfproxy.js"></script>
-    <script src="/js/flapjax-2.1.js"></script>
-    <script src="/js/q.js"></script>
+    <script type="text/javascript" src="/js/mdraw.js"></script>
+    <script type="text/javascript" src="/js/utils.js"></script>
+    <script type="text/javascript" src="/js/gfproxy.js"></script>
     <script type="text/javascript" src="/nowjs/now.js"></script>
+    <script type="text/javascript" src="/js/jquery-1.10.2.js"></script>
 
     <script type="text/javascript" language="javascript">
 
         var rname = getQueryString('room');
         var nickname = getQueryString('nick');
 
-        var sessionId = getURLParam("sessionid");
+        var sessionId = getQueryString("sessionid");
 
         window.init = function () {
             setNames(rname, nickname);
-            initApp(now);
         };
 
         now.ready(function () {
+            initApp(now);
             now.logMessage("Connected to the server successfully.");
-
+            now.joinAvailableRoom(nickname, rname, function (response) {
+                console.log("Joined room: " + rname + " as: " + nickname + " with id: " + response);
+                //set acquired SessionId
+                sessionId = now.core.clientId;
+            });
         });
 
 
         now.receiveMessage = function (name, msg) {
-            console.log("Message from participant: " + msg);
+            console.log("Message from participant: " + name + ": " + msg);
         };
 
 

@@ -18,20 +18,6 @@ function remoteCall(url, args, responseCallback) {
     http.send(null);
 };
 
-function loadRooms() {
-    //remote call for rooms
-    remoteCall("ajax", "request=loadrooms", function (reply) {
-        var dd = document.getElementById('room');
-        var obj = JSON.parse(reply.rooms);
-        if (!obj.success)
-            return;
-        obj.rooms.map(function (val) {
-            dd.add(new Option(val, val), null);
-        });
-
-    });
-}
-
 //where all the session logic magic happens...
 function loadRoomsP() {
 
@@ -44,26 +30,6 @@ function loadRoomsP() {
         //promise for dropdown select
         var deferred = Q.defer();
 
-        var roomsarr = Object.keys(rooms);
-        if (rooms) {
-            var dd = document.getElementById('room');
-            console.log("load rooms finished");
-            var roomsarr = Object.keys(rooms);
-            roomsarr.map(function (val) {
-                dd.add(new Option(val, val), null);
-            });
-            //add evt to show before submit
-            var form = document.getElementById('myform');
-            //enable start button
-            document.getElementById('start-div').style.display = "block";
-
-            form.onsubmit = function (evt) {
-                if (dd.value !== "-1") deferred.resolve(dd.value);
-                evt.preventDefault();
-            };
-        } else {
-            deferred.reject("No rooms found");
-        }
 
         return deferred.promise;
     })
@@ -94,8 +60,6 @@ function loadRoomsP() {
 
     //show dd
     document.getElementById('roomname-dd').style.display = "block";
-
-    document.getElementById('join-div').style.display = "none";
 }
 
 /**
@@ -116,46 +80,39 @@ function selectRoom(val) {
 function init() {
 
     //hide the dropdown until user clicks join
-    document.getElementById('roomname-div').style.display = "none";
-    document.getElementById('roomname-dd').style.display = "none";
-    document.getElementById('start-div').style.display = "none";
+    //document.getElementById('roomname-div').style.display = "none";
+    //document.getElementById('roomname-dd').style.display = "none";
+    //document.getElementById('start-div').style.display = "none";
 
     //set click event
-    document.getElementById('join').onclick = function (evt) {
-        var username = document.getElementById('nick').value;
-        if (username) {
-            loadRoomsP();
-        }
-    }
+    var username = document.getElementById('nick').value;
+
     //message
     now.receiveMessage = function (name, msg) {
         console.log("Message from participant: " + msg);
     };
-}
-//todo: investigate appending 2 cbs problem
-/** give now callback string, returns promise that invokes remote now server
- *
- * @param fn  the nowjs fn name as string
- * @returns {Function} that calls nowjs fn on server
- */
-function fnpromise(fn) {
-    return function () {
-        var deferred = Q.defer();
-        func = now[fn];
+    now.ready(function () {
+        now.loadRooms(function (result, rooms) {
+            if (rooms) {
+                var dd = document.getElementById('room');
+                console.log("load rooms finished");
+                var roomsarr = Object.keys(rooms);
+                roomsarr.map(function (val) {
+                    dd.add(new Option(val, val), null);
+                });
+                //add evt to show before submit
+                var form = document.getElementById('myform');
 
-        func.apply(this, Array.prototype.slice.call(arguments).concat(cb));
-        function cb(err, value) {
-            if (err == null) {
-                deferred.resolve((arguments.length > 2) ?
-                    Array.prototype.slice.call(arguments, 1) :
-                    value);
+                form.onsubmit = function (evt) {
+                    if (dd.value === "-1")
+                        evt.preventDefault();
+                };
             } else {
-                deferred.reject(new Error(err));
+                console.log("No rooms found");
             }
-        }
 
-        return deferred.promise;
-    }
+        });
+        document.getElementById('roomname-div').style.display = "none";
+    });
+
 }
-
-

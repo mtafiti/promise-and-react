@@ -93,86 +93,90 @@
         this.strokecolor = getRandomColor(); //'#444444';
     }
 
-    //grouping shapes  - todo: not working
-    function Group(shapesToAdd) {
-        var maxx = -1, maxy = -1, minx = 9999, miny = 9999;
-        shapesToAdd.forEach(function (shape) {
-            if (shape.x < minx) minx = shape.x;
-            if ((shape.w + shape.x) > maxx) maxx = (shape.w + shape.x);
-            if (shape.y < miny) miny = shape.y;
-            if ((shape.h + shape.y) > maxy) maxy = (shape.h + shape.y);
-        });
-        this.base = Object.create(new ShapeObj(minx, miny, (maxx - minx), (maxy - miny)));
-        this.type = 'group';
-        debugger;
-        this.grpid = generateRandomID("GRP-");
-        this.fill = '';
-        this.selected = true;
-        this.x = this.base.x;
-        this.y = this.base.y;
-        this.w = this.base.w;
-        this.h = this.base.h;
-        this.shapes = new Array;
+    /*
+     //grouping shapes  - todo: finish implementation
+     function Group(shapesToAdd) {
+     var maxx = -1, maxy = -1, minx = 9999, miny = 9999;
+     shapesToAdd.forEach(function (shape) {
+     if (shape.x < minx) minx = shape.x;
+     if ((shape.w + shape.x) > maxx) maxx = (shape.w + shape.x);
+     if (shape.y < miny) miny = shape.y;
+     if ((shape.h + shape.y) > maxy) maxy = (shape.h + shape.y);
+     });
+     this.base = Object.create(new ShapeObj(minx, miny, (maxx - minx), (maxy - miny)));
+     this.type = 'group';
+     debugger;
+     this.grpid = generateRandomID("GRP-");
+     this.fill = '';
+     this.selected = true;
+     this.x = this.base.x;
+     this.y = this.base.y;
+     this.w = this.base.w;
+     this.h = this.base.h;
+     this.shapes = new Array;
 
 
-        this.add = function (shape) {
-            this.shapes.push(shape);
-            shape.grpid = this.grpid;
-        };
+     this.add = function (shape) {
+     this.shapes.push(shape);
+     shape.grpid = this.grpid;
+     };
 
-        this.remove = function (shape) {
-            for (var i = this.shapes.length; i >= 0; i--) {
-                if (this.shapes[i].id === shape.id) {
-                    this.shapes.splice(i, 1);
-                    break;
-                }
-            }
-        };
+     this.remove = function (shape) {
+     for (var i = this.shapes.length; i >= 0; i--) {
+     if (this.shapes[i].id === shape.id) {
+     this.shapes.splice(i, 1);
+     break;
+     }
+     }
+     };
 
-        //add selected shapes to group
-        if (shapesToAdd) {
+     //add selected shapes to group
+     if (shapesToAdd) {
 
-            for (var i = 0; i < shapesToAdd.length; i++) {
-                this.add(shapesToAdd[i]);
-                //shapesToAdd[i].unselect();
-            }
-        }
+     for (var i = 0; i < shapesToAdd.length; i++) {
+     this.add(shapesToAdd[i]);
+     //shapesToAdd[i].unselect();
+     }
+     }
 
-        /*group.mouseDown = function(e){
-         group.shapes.forEach(function(shape){  //todo: return values
-         shape.MouseDown(e);
-         });
-         };*/
-        this.mouseMove = function (x, y, e, idx) {
-            this.shapes.forEach(function (shape) {
-                shape.mouseMove(x, y, e, idx);
-            });
-            this.base.mouseMove(x, y, e, idx);
-        };
-        this.mouseUp = function (x, y, e) {
+     /*group.mouseDown = function(e){
+     group.shapes.forEach(function(shape){  //todo: return values
+     shape.MouseDown(e);
+     });
+     };*/
+    /*
+     this.mouseMove = function (x, y, e, idx) {
+     this.shapes.forEach(function (shape) {
+     shape.mouseMove(x, y, e, idx);
+     });
+     this.base.mouseMove(x, y, e, idx);
+     };
+     this.mouseUp = function (x, y, e) {
 
-            this.shapes.forEach(function (shape) {
-                shape.mouseUp(x, y, e);
-            });
-            this.base.mouseUp(x, y, e)
-        };
+     this.shapes.forEach(function (shape) {
+     shape.mouseUp(x, y, e);
+     });
+     this.base.mouseUp(x, y, e)
+     };
 
-        this.draw = function (context) {
-            this.shapes.forEach(function (shape) {
-                shape.draw(context);
-            });
-            this.base.draw(context);
-        };
+     this.draw = function (context) {
+     this.shapes.forEach(function (shape) {
+     shape.draw(context);
+     });
+     this.base.draw(context);
+     };
 
-        this.isHit = this.base.isHit;
-        this.isSelected = this.base.isSelected;
-        this.getSelectedHandle = this.base.getSelectedHandle;
-        this.resize = function () { /*do nothing */
-        }
-        this.select = this.base.select;
-        this.unselect = this.base.unselect;
-        this.mouseDown = this.base.mouseDown;
-    }
+     this.isHit = this.base.isHit;
+     this.isSelected = this.base.isSelected;
+     this.getSelectedHandle = this.base.getSelectedHandle;
+     this.resize = function () { //do nothing
+     }
+     this.select = this.base.select;
+     this.unselect = this.base.unselect;
+     this.mouseDown = this.base.mouseDown;
+     }
+     */
+
 
     // shape object to hold data
     function ShapeObj(x, y, w, h) {
@@ -203,6 +207,9 @@
 
         //register proxy on this object
         //gfproxy.register(this);
+
+        //groupfn
+        addToGroup(this);
     }
 
     // Shapes 'class'
@@ -1010,10 +1017,10 @@
         //gfproxy.register(canvas);
 
         //load reactive toolbar
-        loadReactiveToolbar();
+        loadToolbar();
 
         //user interactions abstracted as event streams
-        registerReactiveMouseMovements(canvas);
+        initMouseEvents(canvas);
 
         //starts an auto-save event stream every 5 secs
         //startAutoSaveSessionTimer(10000);
@@ -1099,21 +1106,11 @@
                             mousey: my,
                             handle: _shape.getClosestSelectedHandle(mx, my)
                         };
-                        now.registerDrag(_shape.shpid, shpargs, function (res) {
-                            //dont user _shape, use id from server
-                            if (res.isComposed === false) {
-                                var theshape = getBox(res.args.shape.shpid);
-                                //console.log("move called from server:  " + _shape.shpid);
-                                if (theshape) {
-                                    theshape.mouseMove(res.args.deltaX, res.args.deltaY, res.args.evtargs);
-                                } else console.error("registerDrag: shape not found: " + res.args.shape.shpid);
-                            } else {
-                                //console.log("Composed event raised on shape: " + (res.shpid || "unknown"));
-                                collabDrag(res.args);
-                            }
-                        });
+                        //for dragging, we use deltas. for resizing, actual mouse cooords
+                        _shape.mouseMove(shpargs.deltaX, shpargs.deltaY, shpargs.evtargs, shpargs.handle);
                     }
                 } else if (isResizeDrag) {
+                    //debugger;
                     _shape.mouseMove(mx, my, e, expectResize);
                     break;
                 }
@@ -1187,7 +1184,7 @@
     function myDown(e) {
         getMouse(e);
 
-        publishMouseEvent(e, BIRTH);
+        //publishMouseEvent(e, BIRTH);
 
         //check if we are over a selection shape
         if (expectResize !== -1) {
@@ -1225,7 +1222,7 @@
             var rect = addShape(mx - (width / 2), my - (height / 2), width, height, null, true, null, currDrawType);
             isResizeDrag = true;
             //set dragging handle to 7
-            expectResize = 7;	//TODO:  CHANGE THIS TO LAST HANDLE OF OBJECT
+            expectResize = 7;	//improvement: for other shapes, it ca be better to get the last handle of shape
 
             publishDistData('addshape', e, rect);
 
@@ -1290,12 +1287,13 @@
             }
         }
 
-        if (isDrag) {
-            //report to server end of drag
-            now.registerEndDrag(_shape.shpid, function () {
-                console.log("..ended drag on client");
-            });
-        }
+        /* if (isDrag) {
+         //report to server end of drag
+         now.clientEndDrag(_shape.shpid, function () {
+         console.log("..ended drag on client");
+         });
+         }
+         */
 
         //todo: put in callback?
         isDrag = false;
@@ -1520,18 +1518,23 @@
         }
     }
 
-    function groupShapes() {
+    /*
+     function groupShapes - groups the selected shapes (unused)
+     */
+    /*
+     function groupShapes() {
 
-        //here we check if more than one shapes are selected
-        //so we group them
-        var grp = new Group(getSelectedBoxes());
-        allshapes.push(grp);
-        //remove other shapes
-        for (var i = 0; i < allshapes.length; i++) {
-            if (allshapes[i].isSelected())
-                allshapes.splice(i, 1);
-        }
-    }
+     //here we check if more than one shapes are selected
+     //so we group them
+     var grp = new Group(getSelectedBoxes());
+     allshapes.push(grp);
+     //remove other shapes
+     for (var i = 0; i < allshapes.length; i++) {
+     if (allshapes[i].isSelected())
+     allshapes.splice(i, 1);
+     }
+     }
+     */
 
     function publishDistData(evtType, e, data, state) {
         //avoid circular references before serialization
@@ -1641,9 +1644,8 @@
             var evtdata = data[i];
             if (!evtdata)
                 continue;
-            //debugger;
             //can check if update is for this device. maybe.
-            var box = getBox(evtdata.args.shape.shpid);
+            var box = getBox(evtdata.oid);
             if (!box) {
                 continue;
             }
@@ -1651,6 +1653,7 @@
             //calculations for dist resize based on selection handle
             var right = box.x + box.w;
             var bottom = box.y + box.h;
+
 
             //check if the mouse is within the bounds of shape,
             //(note; also allow if it passes by an offset)
@@ -1663,10 +1666,9 @@
             //isResizeDrag = true;
             isDistResize = true;
 
-
-            var idx = evtdata.args.handle;
-            var myx = evtdata.args.mousex;
-            var myy = evtdata.args.mousey;
+            var idx = evtdata.args.idx;
+            var myx = evtdata.args.__evtx;
+            var myy = evtdata.args.__evty;
 
             //console.info(">> resize index for collab drag is: " + idx);
 
@@ -1905,67 +1907,44 @@
      changes for the experiment
      */
     /*
-     *	function rloader - add reactive elements to toolbar
+     *	function loadToolbar - register toolbar clicks
      */
-    function loadReactiveToolbar() {
-
-        mergeE(clicksE("home"), clicksE("savesession"), clicksE("deleteshapes"), clicksE("selectshapes"), clicksE("drawlines"), clicksE("drawrects"), /*clicksE("drawellipses"), clicksE("drawcrects"), */clicksE("deleteallshapes"), clicksE("selectallshapes"), clicksE("groupshapes"))
-            .mapE(function (val) {
-
-                switch (val.currentTarget.id) {
-                    case 'selectallshapes':
-                        selectAllBoxes();
-                        break;
-                    case 'deleteallshapes':
-                        deleteAllShapes();
-                        break;
-                    case 'drawellipses':
-                        setCurrentDraw('ellipse');
-                        break;
-                    case 'drawcrects':
-                        setCurrentDraw('crect');
-                        break
-                    case 'drawrects':
-                        setCurrentDraw('rect');
-                        break;
-                    case 'drawlines':
-                        setCurrentDraw('line');
-                        break;
-                    case 'selectshapes':
-                        setCurrentDraw('');
-                        break;
-                    case 'deleteshapes':
-                        deleteSelectedBoxes();
-                        break;
-                    case 'groupshapes':
-                        groupShapes();
-                        break;
-                    case 'savesession':
-                        saveSession();
-                        break;
-                    case 'home':
-                        location.href = 'index.html';
-                        break;
-                    default:
-                        setCurrentDraw('');
-                }
-            });
-
-        //the drop downs
-        //change of fill color
-        fillChangeE = extractEventE($('fillcolor'), 'change');
-        fillChangeE.mapE(function (val) {
-            changeFill(val.target.value);
+    function loadToolbar() {
+        $('#selectallshapes').click(selectAllBoxes);
+        $('#deleteallshapes').click(deleteAllShapes);
+        $('#deleteshapes').click(deleteSelectedBoxes);
+        //$('#groupshapes').click(groupShapes);
+        $('#savesession').click(saveSession);
+        $('#drawellipses').click(function () {
+            setCurrentDraw('ellipse');
         });
-        //change of border color
-        borderColorChangeE = extractEventE($('bordercolor'), 'change');
-        borderColorChangeE.mapE(function (val) {
-            changeBorderColor(val.target.value);
+        $('#drawcrects').click(function () {
+            setCurrentDraw('crect');
         });
-        //change of border width
-        borderWidthChangeE = extractEventE($('borderwidth'), 'change');
-        borderWidthChangeE.mapE(function (val) {
-            changeBorderWidth(val.target.value);
+        $('#drawrects').click(function () {
+            setCurrentDraw('rect');
+        });
+        $('#drawlines').click(function () {
+            setCurrentDraw('line');
+        });
+        $('#selectshapes').click(function () {
+            setCurrentDraw('');
+        });
+        $('#home').click(function () {
+            location.href = 'index.html';
+        });
+
+        $('#fillcolor').change(function () {
+            changeFill($('#fillcolor').val());
+        });
+
+
+        $('#bordercolor').change(function () {
+            changeBorderColor($('#bordercolor').val());
+        });
+
+        $('#borderwidth').change(function () {
+            changeBorderWidth($('#borderwidth').val());
         });
 
         /* //save after every 10 secs or explicit save
@@ -1977,38 +1956,13 @@
 
     }
 
-    function registerReactiveMouseMovements(canvas) {
-
-        function mouseDownMove(element) {
-            return extractEventE(element, "mousedown").mapE(function (md) {
-                myDown.call(canvas, md);
-
-                return extractEventE(canvas, "mousemove").mapE(function (mm) {
-                    myMove.call(canvas, mm);
-                    return mm;
-                });
-            });
-        }
-
-        function mouseUp(element) {
-            return extractEventE(canvas, "mouseup").mapE(function (mu) {
-                myUp(mu)
-            });
-        }
-
-
-        function mouseDownMoveUp(element) {
-            var downMoveUp = mouseDownMove(element).mergeE(mouseUp(element));
-            return downMoveUp;//.switchE();
-        }
-
-
-        var drag = mouseDownMoveUp(canvas);
-        drag.mapE(function (e) {
-            //gesture complete. todo:
-
-        });
-        //return drag.startsWith(canvas);
+    function initMouseEvents(canvas) {
+        canvas.onmousedown = myDown;
+        canvas.onmouseup = myUp;
+        //canvas.ondblclick = myDblClick;
+        canvas.onmousemove = myMove;
+        //give canvas shpid for this case
+        canvas.shpid = "C1";
 
     }
 
@@ -2043,6 +1997,224 @@
 
         first.target.dispatchEvent(simulatedEvent);
         event.preventDefault();
+    }
+
+    function addToGroup(obj) {
+
+        //extracts the names of the function in a rule, in order to intercept
+        var extractFunctionNames = function (rulestr) {
+
+            var functionDenoter = "function";
+
+            var indices = getIndicesOf(functionDenoter, rulestr, false); //chanage this if "function" changes
+            var fnnames = indices.map(function (i) {
+                var reststr = rulestr.substring(i + functionDenoter.length + 2);
+                var item = reststr.substring(0, reststr.indexOf('"'));
+                return item;
+            });
+            return arrayUnique(fnnames);
+        };
+
+        var createOn = function () {
+            //save fact in Facts variable
+
+            //this refers to the shape obj
+            return    function (str, fn) {
+                if (!this[str]) {
+                    console.log("draw - property not found: " + str);
+                    return;
+                }
+                //if already defined, do nothing.
+                if (this[str]["rulefn"])
+                    return;
+
+                this[str]["rulefn"] = fn;
+                //register rule in server
+                now.createRule(this[str].rulename, this[str].rule, function (response) {
+                    console.log(response.msg);
+                });
+
+                //create a new now method for handling composed interactions
+                now[this[str].rulename] = this[str]["rulefn"];
+
+                var fnNames = extractFunctionNames(this[str].rule);
+
+                var self = this;
+                if (fnNames) {
+                    fnNames.forEach(function (item) {
+                        groupfn(item, self, self[str]["rulefn"]);
+                    });
+                    //gfproxy.registerRule(this[str]);
+                }
+            };
+        };
+
+        //creates a new groupobject
+        var GroupObject = function (obj, seq) {
+            //extend this object with the rule object passed as seq
+            Object.extend(obj, seq);
+
+            obj.on = createOn.call(obj);
+
+            return obj;
+        };
+
+
+        var groupShape = GroupObject(obj, {
+            //the rule to assert to midas for this grp. note: \ is string newline in js
+            startRule: rule("startRule",
+                '(Invoked (function "mouseDown") (dev ?d1) (args ?a1) (time ?on1))	' +
+                    '(Invoked (function "mouseDown") (dev ?d2) (args ?a2)(time ?on2)) ' +
+                    '(test (neq ?d1 ?d2))' +
+                    '(test (time:within ?on1 ?on2 1500))' +   //!!
+                    '(not (startDM (dev1 ?d1) (time ?on1)))' +
+                    '(not (and (Invoked (function "mouseUp") (dev ?d1) (args ?a3) (time ?on3)) ' +
+                    '(test (time:before ?on2 ?on3)))) ' +
+                    '=> ' +
+                    '(printout t "startDM1 asserted" crlf) ' +
+                    '(assert (startDM (dev1 ?d1) (dev2 ?d2) (time ?on1) (args ?a1))) ' +
+                    '(call (args ?a1  ?a2))'),
+            bodyRule: rule("bodyRule",
+                '(startDM (dev1 ?d1) (dev2 ?d2) (time ?t1)) ' +
+                    '(not (or (and (endDM (dev1 ?d1) (dev2 ?d2) (time ?t2)) (test (time:before ?t1 ?t2)) ) ' +
+                    '(and (endDM (dev1 ?d2) (dev2 ?d1) (time ?t3)) (test (time:before ?t1 ?t3))) )) ' + //no endDm after startDm
+                    '(Invoked (function "mouseMove") (args ?a) (time ?ton) (dev ?dm)) ' +
+                    '(test (or (eq ?dm ?d1) (eq ?dm ?d2))) ' +
+                    '=> ' +
+                    '(printout t "startDM1 asserted" crlf) ' +
+                    '(assert (bodyDM (dev1 ?d1) (dev2 ?d2) (args ?a))) ' +
+                    '(call (args ?a))'),
+            endRule: rule("endRule",
+                '(startDM (dev1 ?d1) (dev2 ?d2) (time ?don) ) ' +
+                    '(Invoked (function "mouseUp") (dev ?dx) (args ?a) (time ?on1)) ' +
+                    '(test (or (eq ?dx ?d1) (eq ?dx ?d2))) ' +
+                    '(not (and (endDM (dev1 ?d1) (dev2 ?d2) (time ?dend))' +
+                    '(or (test (time:before ?don ?dend)) (eq ?don ?dend)) )) ' +
+                    '=> ' +
+                    '(printout t "endDM asserted" crlf) ' +
+                    '(assert (endDM (dev1 ?d1) (dev2 ?d2) (time ?on1) (args ?a))) ' +
+                    '(call (args ?a))')
+        });
+
+        //add on constructs
+        //obj.on = createOn.call(obj);
+
+        //register composed event handlers
+        groupShape.on("startRule", function (data) {
+            console.log("Collab function for startRule called. data: ");
+            console.dir(data);
+            //to call normal function use
+            //setTimeout('myfunction()',0,); or, eval
+            //since we are not in the global scope
+        });
+        groupShape.on("bodyRule", function (data) {
+            console.log("Collab function for bodyRule called. data: ");
+            console.dir(data);
+            collabDrag(data);
+        });
+        groupShape.on("endRule", function (data) {
+            console.log("Collab function for endRule called. data: ");
+            console.dir(data);
+        });
+        /*groupShape.on("endRule2", function(data){
+         console.log("Collab function FAILED. data: ");
+         console.dir(data);
+         });*/
+
+
+        function rule(name, rulestr) {
+            return {'rulename': name, rule: rulestr};
+        }
+
+
+    }
+
+    function groupfn(fn, obj, grpfn) {
+        var func = obj[fn];
+        //function param names
+        var fnparams = getFunctionParams(func);
+        //for context
+
+        var self = obj;
+
+        obj[fn] = function (evt) {
+            //store arguments
+            var fnargs = {};
+            //first format args with their params
+            var params = {};
+
+            for (var i = 0, l = arguments.length; i < l; i++) {
+                //first check if param is defined - js allows fn calling for unnamed args
+                if (!fnparams[i]) {
+                    //if not, create new param name for this arg
+                    fnparams[i] = 'arg_' + i;
+                }
+                //limitation: need to remove or format event object in the event args for serialization
+                //to avoid circular dependencies
+                if (isEvent(arguments[i])) {
+                    var e = arguments[i];
+                    //use this to avoid cyclic event object unsupported by JSON
+                    var basicEventOpts = {
+                        pointerX: e.pointerX,
+                        pointerY: e.pointerY,
+                        pageX: e.pageX,
+                        pageY: e.pageY,
+                        screenX: e.screenX,
+                        screenY: e.screenY,
+                        button: e.button,
+                        ctrlKey: e.ctrlKey,
+                        altKey: e.altKey,
+                        shiftKey: e.shiftKey,
+                        metaKey: e.metaKey,
+                        bubbles: e.bubbles,
+                        cancelable: e.cancelable
+                    };
+                    //get the normalized x and y values from event object
+                    var xy = [mx, my];// normalizeMouseXY(basicEventOpts);
+
+                    //add to params - make distinct if there exists an x or y parameter
+                    fnargs['__evtx'] = xy[0];
+                    fnargs['__evty'] = xy[1];
+
+                    fnargs[fnparams[i]] = basicEventOpts;
+                } else {
+                    //also strips out whitespace
+                    fnargs[fnparams[i]] = arguments[i];
+                }
+            }
+
+            var fnmarshall = {
+                fnname: fn,
+                receiver: obj.shpid,  //in this case its the shape that is the receiver
+                args: fnargs
+            };
+            //get the event
+            now.clientEvent(fn, fnparams, fnmarshall, function (res) {
+                if (res.isComposed) {    //composed event
+                    console.log("Composite event detected.");
+                    if (grpfn) {
+                        grpfn.apply(obj, res.args)
+                    }
+                } else {   //normal event
+                    var args = [];
+                    //get res args as array to pass to fn.apply
+                    if (res.fnargs.args) {
+                        //remove api-injected keys before calling fn
+                        var temp = Object.keys(res.fnargs.args).filter(function (key) {
+                            return key.indexOf("__") === -1;
+                        });
+                        args = temp.map(function (key) {
+                            return res.fnargs.args[key];
+                        });
+                    }
+                    func.apply(self, args);
+                    //collabDrag(res.args);
+
+                    //Array.prototype.slice.call(arguments).concat()
+                }
+            });
+
+        };
     }
 
 // -------------- external functions -------------------------

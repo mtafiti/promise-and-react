@@ -1,14 +1,13 @@
 /**
  * Requires.
  */
-require('./libs/flapjax-2.1.js');
-
 var express = require('express')
     , routes = require('./routes')
     , ajax = require('./routes/ajax')
     , http = require('http')
     , utils = require('./libs/utilities-server.js')
-    , path = require('path');
+    , path = require('path')
+    , midas = require('./libs/midasbridge/midas.js');
 
 
 var app = express();
@@ -64,6 +63,10 @@ server = http.createServer(app).listen(app.get('port'), function () {
 
 var mynow = require("./libs/groups").initialize(server);
 
+//start midas engine
+
+midas.start(mynow);
+
 //log a message on client. mainly for test purposes.
 mynow.everyone.now.logMessage = function (msg) {
     console.log("Message from client: " + msg);
@@ -76,13 +79,13 @@ mynow.everyone.now.logRooms = function () {
 };
 
 //test. to remove
-mynow.everyone.now.testFunc = function () {
+mynow.everyone.now.testFunc = function (msg, cb) {
     // this.now.doSomething();
     console.log("Test message from " + this.user.clientId);
+    cb("Server responds with hi!")
 };
 
-//test. to remove
-var testcount = 0;
+//test function - to remove
 mynow.everyone.now.testpromise = function (cb) {
     // this.now.doSomething();
     console.log("testPromiseSever called. ");
@@ -110,7 +113,7 @@ mynow.everyone.now.sendChatToAll = function (message, cb) {
 mynow.everyone.now.addClientToGroup = function (name, rm, cb) {
 
     var res = mynow.addUser({id: this.user.clientId, 'name': name}, rm);
-    if (res) cb(this.user.cookie["connect.sid"], "Added successfully");
+    if (res) cb(this.user.clientId, "Added successfully");
     else {
         cb("Unable to add the user. ", null)
         console.log("unable to add user " + name);
@@ -120,9 +123,13 @@ mynow.everyone.now.addClientToGroup = function (name, rm, cb) {
 //register user to room
 mynow.everyone.now.joinAvailableRoom = function (name, rm, cb) {
     var res = mynow.addUser({id: this.user.clientId, 'name': name}, rm);
-    if (res) cb(null, this.user.cookie["connect.sid"]);
+    //if (res) cb(null, this.user.cookie["connect.sid"]);
+    if (res) {
+        cb(this.user.clientId);
+        //also notify others in the room
+    }
     else {
-        cb("Added successfully", "Unable to add the user. ")
+        cb("Unable to add the user. ")
         console.log("Error: unable to add user " + name);
     }
 };
@@ -130,97 +137,60 @@ mynow.everyone.now.joinAvailableRoom = function (name, rm, cb) {
 //broadcast data
 mynow.everyone.now.distributeData = function (data) {
     //send to everyone, with the client's session id
-    mynow.everyone.now.receiveData(this.user.cookie["connect.sid"], data);
+    mynow.everyone.now.receiveData(this.user.clientId, data);
 };
 
-//drag operation started. can be collaborative.
-mynow.everyone.now.registerDrag = function (shpid, info, cb) {
-
-    if (distInteractions.isEmpty() || distInteractions.hasOnly(this.user.cookie["connect.sid"])) {
-        //create event stream
-        var reqE = receiverE();
-
-        //debugging
-        //console.log('adding event stream for shape: ' + shpid + ' and user: ' + this.user.clientId);
-        var data = {args: info, stream: reqE, item: shpid};
-
-        distInteractions.add(this.user.cookie["connect.sid"], data);
-
-        reqE.mapE(function (val) {
-            cb(val);
-        });
-
-        //send event the first time
-        reqE.sendEvent({isComposed: false, args: info});
-
-    } else {
-        //first gather all args to send to all clients
-        var allargs = [];
-
-        //get this user's event stream
-        var userData = distInteractions.get(this.user.cookie["connect.sid"]);
-        var userStream;
-        //if the user exists in hash, use his event stream
-        if (userData) {
-            userStream = userData.stream;
-        } else {
-            //if not, new drag user, create one for him
-            userStream = receiverE();
-            userStream.mapE(function (val) {
-                cb(val);
-            });
-        }
-
-        var hashData = {args: info, stream: userStream, item: shpid};
-
-        //add new data for my drag in the dictionary
-        //console.log('adding event data for shape: ' + shpid + ' and user: ' + this.user.clientId);
-        distInteractions.add(this.user.cookie["connect.sid"], hashData);
-
-        //check if on same shape
-        if (distInteractions.usersOnSameShape(shpid)) {
-
-            //faster to use Object.keys? See
-            //http://jsperf.com/keys-vs-array
-            distInteractions.forEach(function (key, val) {
-                //push the args into array
-                allargs.push({client: key, args: val.args});
-            });
-            //then send to each stream
-            distInteractions.forEach(function (key, value) {
-                //send with all args
-                if (value.stream) {
-                    value.stream.sendEvent({isComposed: true, args: allargs});
-                }
-            });
-            console.log("Sent collab drag to all contestants.. args: ");
-            console.dir(allargs);
-
-        } else {
-            //then send to each stream  SHOULD UPDATE ONLY YOURS
-            distInteractions.forEach(function (key, value) {
-                //send with all args
-                if (value.stream) {
-                    value.stream.sendEvent({isComposed: false, args: value.args});
-                }
-            });
-        }
-    }
+//event intercepted
+mynow.everyone.now.clientEvent = function (fn, params, info, cb) {
+    //var userId = this.user.cookie["connect.sid"];
+    var userId = this.user.clientId;
+    midas.publishInvoke(info, userId, function (args) {
+        //return the result to client
+        cb(args);
+    });
 };
 
+//mouse up operation. can end a collaborative drag.
+mynow.everyone.now.clientEndDrag = function (shape, cb) {
 
-mynow.everyone.now.registerEndDrag = function (shape, cb) {
-    var userId = this.user.cookie["connect.sid"];
-    //get the stream and disable it
-    var entry = distInteractions.get(userId);
-    if (entry) entry.stream = null;   //could set it to zeroE also
-    //remove from dictionary
-    distInteractions.remove(userId);
+    //at this point midas has identified a composed event
+    var userId = this.user.clientId;
+    //get room name, then send to ppl in room
+    var usersRoom = mynow.everyone.now.getRoomForUser(userId);
 
-    //console.log("...ended drag operation by client " + this.user.cookie["connect.sid"]);
-    cb();
+    //append correct rule to invokes
+    invokes.forEach(function (val) {
+        val.rulename = rulename;
+        console.log("invokes rule:");
+        console.dir(val);
+    });
+
+    //now send to devices in room
+    var theGroup = mynow.getGroup(usersRoom.name);
+    theGroup.composedEvent(invokes); //todo: add
+
+    console.log("Sequence callback called. in room " + usersRoom.name + ". data: ");
+    console.dir(invokes);
+
+    //todo:
+    // cb();
 };
+
+mynow.everyone.now.createRule = function (rulename, rule, returnfn) {
+    //var userId = this.user.cookie["connect.sid"];
+    var userId = this.user.clientId;
+
+    midas.publishNewRule(rulename, rule, function (invokes) {
+
+
+    });
+
+    //finished registering sequence
+    returnfn({msg: 'Created rule successfully'});  //todo: check params
+
+};
+
 
 //init rooms - for demo
-mynow.addRoom("dylaroom");
+mynow.addRoom("mingoroom");
 mynow.addRoom("testroom");
