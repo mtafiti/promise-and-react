@@ -2060,8 +2060,8 @@
         };
 
 
-        var groupShape = GroupObject(obj, {
-            //the rule to assert to midas for this grp. note: \ is string newline in js
+        /* var groupShape = GroupObject(obj, {
+         //the rule to assert to midas for this grp. note: \ is string newline in js
             startRule: rule("startRule",
                 '(Invoked (function "mouseDown") (dev ?d1) (args ?a1) (time ?on1))	' +
                     '(Invoked (function "mouseDown") (dev ?d2) (args ?a2)(time ?on2)) ' +
@@ -2077,8 +2077,8 @@
             bodyRule: rule("bodyRule",
                 '(startDM (dev1 ?d1) (dev2 ?d2) (time ?t1)) ' +
                     '(not (or (and (endDM (dev1 ?d1) (dev2 ?d2) (time ?t2)) (test (time:before ?t1 ?t2)) ) ' +
-                    '(and (endDM (dev1 ?d2) (dev2 ?d1) (time ?t3)) (test (time:before ?t1 ?t3))) )) ' + //no endDm after startDm
-                    '(Invoked (function "mouseMove") (args ?a) (time ?ton) (dev ?dm)) ' +
+         '(and (endDM (dev1 ?d2) (dev2 ?d1) (time ?t3)) (test (time:before ?t1 ?t3))) )) ' + //no endDm after startDm
+         '(Invoked (function "mouseMove") (args ?a) (time ?ton) (dev ?dm)) ' +
                     '(test (or (eq ?dm ?d1) (eq ?dm ?d2))) ' +
                     '=> ' +
                     '(printout t "startDM1 asserted" crlf) ' +
@@ -2089,11 +2089,52 @@
                     '(Invoked (function "mouseUp") (dev ?dx) (args ?a) (time ?on1)) ' +
                     '(test (or (eq ?dx ?d1) (eq ?dx ?d2))) ' +
                     '(not (and (endDM (dev1 ?d1) (dev2 ?d2) (time ?dend))' +
-                    '(or (test (time:before ?don ?dend)) (eq ?don ?dend)) )) ' +
-                    '=> ' +
+         '(or (test (time:before ?don ?dend)) (eq ?don ?dend)) )) ' +
+         '=> ' +
                     '(printout t "endDM asserted" crlf) ' +
                     '(assert (endDM (dev1 ?d1) (dev2 ?d2) (time ?on1) (args ?a))) ' +
                     '(call (args ?a))')
+         });*/
+        var groupShape = GroupObject(obj, {
+            starRule: rule("startRule", [
+                [Invoked, "inv1", "inv1.function == 'mouseDown' " , {args: "args1", dev: "dev1", time: "time1"}],
+                [Invoked, "inv2", "inv2.function == 'mouseDown' " , {args: "args2", dev: "dev2", time: "time2"}],
+                ["not", "dev1 == dev2"],
+                ["(time1 - time2) <= 1500"],
+                ["not", StartDM, "start1", "start1.dev1 == dev1 && start1.time == time1"],
+                ["not", Invoked , "inv3", "inv3.function == 'mouseUp' " , {args: "args3", dev: "dev3", time: "time3"}],
+                ["not", " time2 < time3"]
+            ]),
+            bodyRule: rule("bodyRule", [
+                [StartDM, "start1", "", {dev1: "dev1Start", dev2: "dev2Start", time: "timeStart"}],
+                [Invoked, "inv1", "inv1.function == 'mouseMove' " , {args: "argsMove", dev: "devMove", time: "timeMove"}],
+                ["not",
+                    ["or",
+                        [EndDM, "enddm1", "enddm1.dev1 == dev1Start && enddm2.dev2 == dev2Start && timeStart < timeMove "],
+                        [EndDM, "enddm2", "enddm2.dev1 == dev2Start && enddm2.dev2 == dev1Start && timeStart < timeMove "]
+                    ]
+                ]
+            ]),
+            endRule: rule("endRule", [
+                [StartDM, "start1", "", {dev1: "dev1Start", dev2: "dev2Start", time: "timeStart"}],
+                [Invoked, "inv1", "inv1.function == 'mouseUp' " , {args: "argsUp", dev: "devUp", time: "timeUp"}],
+                ["or",
+                    ["devMove == dev1Start"],
+                    ["devMove == dev2Start"]
+                ],
+                ["not",
+                    ["and",
+                        [EndDM, "end1", "", {dev1: "dev1End", dev2: "dev2End", time: "timeEnd"}],
+                        ["or",
+                            ["dev1Start < dev1End"],
+                            ["dev1Start == devEnd"]
+                        ]
+                    ],
+                    [EndDM, "enddm1", "enddm1.dev1 == dev1Start && enddm2.dev2 == dev2Start && timeStart < timeMove "],
+                    [EndDM, "enddm2", "enddm2.dev1 == dev2Start && enddm2.dev2 == dev1Start && timeStart < timeMove "]
+                ]
+            ])
+
         });
 
         //add on constructs
@@ -2101,9 +2142,11 @@
 
         //register composed event handlers
         groupShape.on("startRule", function (data) {
+
             console.log("Collab function for startRule called. data: ");
             console.dir(data);
-            //to call normal function use
+
+            //note: to call normal function we probably have to use
             //setTimeout('myfunction()',0,); or, eval
             //since we are not in the global scope
         });
@@ -2122,10 +2165,9 @@
          });*/
 
 
-        function rule(name, rulestr) {
-            return {'rulename': name, rule: rulestr};
+        function rule(name, lhsArray) {
+            return {'rulename': name, rule: lhsArray};
         }
-
 
     }
 

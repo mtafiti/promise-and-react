@@ -1,0 +1,161 @@
+var nools = require("nools");
+
+
+var Invoked = function (fn, dev, args, time) {
+    this.dev = dev;
+    this.args = args || [];
+    this.time = time;
+    this.fn = fn;
+};
+
+//state fact templates
+var StartDM = function (dev1, dev2, time) {
+    this.dev1 = dev1;
+    this.dev2 = dev2;
+    this.time = time;
+    //this.args = args;
+};
+var BodyDM = function (dev1, dev2, time) {
+    this.dev1 = dev1;
+    this.dev2 = dev2;
+    this.time = time;
+    //this.args = args;
+};
+var EndDM = function (dev1, dev2, time) {
+    this.dev1 = dev1;
+    this.dev2 = dev2;
+    this.time = time;
+    //this.args = args;
+};
+
+//cb fact templates
+var StartOper = function (args, time) {
+    this.args = args;
+    this.time = time || Date.now();
+};
+var BodyOper = function (args, time) {
+    this.args = args;
+    this.time = time || Date.now();
+
+};
+var EndOper = function (args, time) {
+    this.args = args;
+    this.time = time || Date.now();
+
+};
+
+
+var invokeFlow = nools.flow("mDraw Flow", function (flow) {
+
+    var mouseDownRule = flow.rule("mouseDown", [
+        [Invoked, "inv1", "inv1.function == 'mouseDown' " , {args: "args1", dev: "dev1", time: "time1"}],
+        [Invoked, "inv2", "inv2.function == 'mouseDown' " , {args: "args2", dev: "dev2", time: "time2"}],
+        ["not", "dev1 == dev2"],
+        ["(time1 - time2) <= 1500"],
+        ["not", StartDM, "start1", "start1.dev1 == dev1 && start1.time == time1"],
+        ["not", Invoked , "inv3", "inv3.function == 'mouseUp' " , {args: "args3", dev: "dev3", time: "time3"}],
+        ["not", " time2 < time3"]
+
+    ], function (facts) { //how to add the then dynamically?
+
+        var inv1 = facts.inv1, inv2 = facts.inv2;
+        var args1 = facts.args1, args2 = facts.args2;
+
+        console.log("StartDM asserted.. ");
+        //can have conditional insert..
+        this.assert(new StartDM(inv1.dev, inv2.dev, inv2.time));
+        this.assert(new StartOper(args1 + args2));
+
+    });
+
+    var mouseMoveRule = flow.rule("mouseMove", [
+        [StartDM, "start1", "", {dev1: "dev1Start", dev2: "dev2Start", time: "timeStart"}],
+        [Invoked, "inv1", "inv1.function == 'mouseMove' " , {args: "argsMove", dev: "devMove", time: "timeMove"}],
+        ["not",
+            ["or",
+                [EndDM, "enddm1", "enddm1.dev1 == dev1Start && enddm2.dev2 == dev2Start && timeStart < timeMove "],
+                [EndDM, "enddm2", "enddm2.dev1 == dev2Start && enddm2.dev2 == dev1Start && timeStart < timeMove "]
+            ]
+        ],
+        ["or",
+            ["devMove == dev1Start"],
+            ["devMove == dev2Start"]
+        ]
+
+    ], function (facts) {
+
+        var inv1 = facts.inv1, inv2 = facts.inv2;
+        var args1 = facts.args1, args2 = facts.args2;
+
+        this.assert(new BodyDM(inv1.dev, inv2.dev, inv2.time));
+        console.log("BodyDM asserted.. ");
+        this.assert(new BodyOper(args1 + args2));
+    });
+
+    var mouseUpRule = flow.rule("mouseUp", [
+        [StartDM, "start1", "", {dev1: "dev1Start", dev2: "dev2Start", time: "timeStart"}],
+        [Invoked, "inv1", "inv1.function == 'mouseUp' " , {args: "argsUp", dev: "devUp", time: "timeUp"}],
+        ["or",
+            ["devMove == dev1Start"],
+            ["devMove == dev2Start"]
+        ],
+        ["not",
+            ["and",
+                [EndDM, "end1", "", {dev1: "dev1End", dev2: "dev2End", time: "timeEnd"}],
+                ["or",
+                    ["dev1Start < dev1End"],
+                    ["dev1Start == devEnd"]
+                ]
+            ],
+            [EndDM, "enddm1", "enddm1.dev1 == dev1Start && enddm2.dev2 == dev2Start && timeStart < timeMove "],
+            [EndDM, "enddm2", "enddm2.dev1 == dev2Start && enddm2.dev2 == dev1Start && timeStart < timeMove "]
+        ]
+    ], function (facts) {
+
+        var inv1 = facts.inv1, inv2 = facts.inv2;
+        var args1 = facts.args1, args2 = facts.args2;
+
+        this.assert(new EndDM(inv1.dev, inv2.dev, inv2.time));
+        console.log("EndDM asserted.. ");
+        this.assert(new EndOper(args1 + args2));
+    });
+
+});
+
+/*
+ '(Invoked (function "mouseDown") (dev ?d1) (args ?a1) (time ?on1))	' +
+ '(Invoked (function "mouseDown") (dev ?d2) (args ?a2)(time ?on2)) ' +
+ '(test (neq ?d1 ?d2))' +
+ '(test (time:within ?on1 ?on2 1500))' +   //!!
+ '(not (startDM (dev1 ?d1) (time ?on1)))' +
+ '(not (and (Invoked (function "mouseUp") (dev ?d1) (args ?a3) (time ?on3)) ' +
+ '(test (time:before ?on2 ?on3)))) ' +
+ '=> ' +
+ '(printout t "startDM1 asserted" crlf) ' +
+ '(assert (startDM (dev1 ?d1) (dev2 ?d2) (time ?on1) (args ?a1))) ' +
+ '(call (args ?a1  ?a2))'
+
+
+ "bodyRule",
+ '(startDM (dev1 ?d1) (dev2 ?d2) (time ?t1)) ' +
+ '(not (or (and (endDM (dev1 ?d1) (dev2 ?d2) (time ?t2)) (test (time:before ?t1 ?t2)) ) ' +
+ '(and (endDM (dev1 ?d2) (dev2 ?d1) (time ?t3)) (test (time:before ?t1 ?t3))) )) ' + //no endDm after startDm
+ '(Invoked (function "mouseMove") (args ?a) (time ?ton) (dev ?dm)) ' +
+ '(test (or (eq ?dm ?d1) (eq ?dm ?d2))) ' +
+ '=> ' +
+ '(printout t "startDM1 asserted" crlf) ' +
+ '(assert (bodyDM (dev1 ?d1) (dev2 ?d2) (args ?a))) ' +
+ '(call (args ?a))'
+
+ "endRule",
+ '(startDM (dev1 ?d1) (dev2 ?d2) (time ?don) ) ' +
+ '(Invoked (function "mouseUp") (dev ?dx) (args ?a) (time ?on1)) ' +
+ '(test (or (eq ?dx ?d1) (eq ?dx ?d2))) ' +
+ '(not (and (endDM (dev1 ?d1) (dev2 ?d2) (time ?dend))' +
+ '(or (test (time:before ?don ?dend)) (eq ?don ?dend)) )) ' +
+ '=> ' +
+ '(printout t "endDM asserted" crlf) ' +
+ '(assert (endDM (dev1 ?d1) (dev2 ?d2) (time ?on1) (args ?a))) ' +
+ '(call (args ?a))'
+
+ */

@@ -7,7 +7,8 @@ var express = require('express')
     , http = require('http')
     , utils = require('./libs/utilities-server.js')
     , path = require('path')
-    , midas = require('./libs/midasbridge/midas.js');
+    , midas = require('./libs/midasbridge/midas.js')
+    , nools = require('./libs/nools/rules.js');
 
 
 var app = express();
@@ -63,9 +64,10 @@ server = http.createServer(app).listen(app.get('port'), function () {
 
 var mynow = require("./libs/groups").initialize(server);
 
-//start midas engine
+//init nools rule engine
+nools.initialize(mynow);
 
-midas.start(mynow);
+//midas.start(mynow);
 
 //log a message on client. mainly for test purposes.
 mynow.everyone.now.logMessage = function (msg) {
@@ -140,14 +142,22 @@ mynow.everyone.now.distributeData = function (data) {
     mynow.everyone.now.receiveData(this.user.clientId, data);
 };
 
-//event intercepted
-mynow.everyone.now.clientEvent = function (fn, params, info, cb) {
+/*
+ mynow.everyone.now.clientEvent = function (fn, params, info, cb) {
     //var userId = this.user.cookie["connect.sid"];
     var userId = this.user.clientId;
     midas.publishInvoke(info, userId, function (args) {
         //return the result to client
         cb(args);
     });
+ };
+ */
+mynow.everyone.now.clientEvent = function (fact, cb) {
+
+    nools.addFact(fact, function (args) {
+        cb("Added fact " + fact.type);
+    });
+
 };
 
 //mouse up operation. can end a collaborative drag.
